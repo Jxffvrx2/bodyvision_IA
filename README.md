@@ -1,3 +1,7 @@
+# BODYVISION IA — Anatomía Humana 3D
+
+Repositorio: [`Jxffvrx2/bodyvision_IA`](https://github.com/Jxffvrx2/bodyvision_IA)
+
 # Human Anatomy 3D
 
 **An interactive 3D atlas of the human body that you can peel layer by layer, in English and हिंदी, with an animated doctor who explains every part.**
@@ -300,12 +304,3 @@ Z-Anatomy is excellent, but a few things in the Blender file needed fixing or wo
 | No 🎤 button | The browser lacks speech recognition (e.g. Firefox). Use Chrome or Edge. |
 | An old model still shows after re-exporting | Hard-refresh with <kbd>Ctrl</kbd>+<kbd>F5</kbd> |
 | Port 5173 is busy | `npm run dev -- --port 5174` |
-
-## Credits and licences
-
-- **3D models:** [Z-Anatomy](https://www.z-anatomy.com/) (CC BY-SA 4.0), derived from [BodyParts3D](https://dbarchive.biosciencedbc.jp/en/bodyparts3d/) © The Database Center for Life Science (CC BY-SA 2.1 JP). The models here were simplified and modified for the web, and these derived models are shared under the same licence.
-- **Libraries:** [three.js](https://threejs.org/) (MIT), [three-mesh-bvh](https://github.com/gkjohnson/three-mesh-bvh) (MIT), [Vite](https://vitejs.dev/) (MIT).
-- **Fonts:** Orbitron, Rajdhani and Baloo 2 from Google Fonts (SIL Open Font License).
-
-> [!WARNING]
-> Z-Anatomy includes a kidney model by Lissie Cowley (CC BY-NC 4.0), and it is part of the organs layer here. That licence forbids commercial use, so replace the kidney before any commercial release.
