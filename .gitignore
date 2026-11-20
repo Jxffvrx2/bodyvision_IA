@@ -36,13 +36,3 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 desktop.ini
-
-# Python caches
-__pycache__/
-*.py[cod]
-
-# Temporary files
-*.txt
-
-# Temporary extracted PDF text
-/BODYVISION_AI*.txt
