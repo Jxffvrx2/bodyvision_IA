@@ -12,6 +12,23 @@ const fitScale = () => Math.round(Math.max(34, Math.min(72, innerHeight * 0.085,
 const HOME_MARGIN = 95
 const homeX = () => innerWidth - Math.max(50, Math.min(95, innerWidth * 0.09))
 
+const SPANISH_LINES = {
+  greetings: [
+    'Hola. Soy Dr. Buddy. Estoy listo para explorar contigo el cuerpo humano.',
+    '¡Bienvenido! Elige una parte del cuerpo y te explicaré cómo funciona.',
+    'Hola. Puedes hacerme una pregunta o elegir una estructura anatómica.',
+  ],
+  clickReactions: [
+    'Hola. ¿Qué quieres saber sobre el cuerpo humano?',
+    'Estoy listo. ¿Qué estructura vamos a explorar?',
+    '¿Qué te gustaría conocer del cuerpo?',
+  ],
+  idleSleeping: ['Zzz... descanso neuronal activado...', 'Zzz... hora de reparar músculos y tejidos...'],
+  idleStudying: ['Estoy repasando las estructuras del cuerpo humano.', 'Voy a revisar una nueva explicación anatómica.'],
+  idleEating: ['Estoy tomando una pausa. Las fibras ayudan al intestino.', 'Una pequeña pausa para cuidar el cerebro y los músculos.'],
+  dontKnow: ['No estoy seguro de esa pregunta. Pregunta por un órgano, hueso, músculo o nervio.', 'Esa consulta está fuera de mis notas. Reformúlala o elige una estructura.'],
+}
+
 export class Doctor {
   constructor(canvas, { anatomy, brain, goToEntry }) {
     this.canvas = canvas
@@ -102,7 +119,9 @@ export class Doctor {
     const mic = $('#mic')
     if (!SR) mic.style.display = 'none'
     else mic.addEventListener('click', () => {
-      const rec = new SR(); rec.lang = getLang() === 'hi' ? 'hi-IN' : 'en-US'; rec.interimResults = false
+      const rec = new SR()
+      rec.lang = getLang() === 'es' ? 'es-ES' : (getLang() === 'hi' ? 'hi-IN' : 'en-US')
+      rec.interimResults = false
       mic.classList.add('on'); rec.start()
       rec.onresult = (ev) => { const t = ev.results[0][0].transcript; this.askInput.value = t; this.ask(t) }
       rec.onend = () => mic.classList.remove('on')
@@ -112,9 +131,16 @@ export class Doctor {
   _pickVoice() {
     if (!('speechSynthesis' in window)) return
     const choose = () => {
-      const hi = getLang() === 'hi'
-      const vs = speechSynthesis.getVoices().filter((v) => (hi ? /^hi(-|_)/i : /^en(-|_)/i).test(v.lang))
-      const pref = hi ? [/natural/i, /Google/i, /Swara|Madhur|Kalpana|Hemant/i, /hi-IN/i] : [/natural/i, /Google US English/i, /Aria|Jenny|Guy|Davis|Samantha|Daniel/i, /en-US/i]
+      const lang = getLang()
+      const hi = lang === 'hi'
+      const es = lang === 'es'
+      const pattern = hi ? /^hi(-|_)/i : (es ? /^es(-|_)/i : /^en(-|_)/i)
+      const vs = speechSynthesis.getVoices().filter((v) => pattern.test(v.lang))
+      const pref = hi
+        ? [/natural/i, /Google/i, /Swara|Madhur|Kalpana|Hemant/i, /hi-IN/i]
+        : es
+          ? [/natural/i, /Elvira|Dalia|Alvaro|Helena|Laura|Monica|Paulina|Sabina|Google español|Microsoft/i, /^es-(ES|MX|US)/i]
+          : [/natural/i, /Google US English/i, /Aria|Jenny|Guy|Davis|Samantha|Daniel/i, /en-US/i]
       for (const re of pref) { const v = vs.find((x) => re.test(x.name) || re.test(x.lang)); if (v) { this.voice = v; return } }
       this.voice = vs[0]
     }
@@ -143,14 +169,19 @@ export class Doctor {
     play.boing()
     this.jump = 1; this.surprise = 1
     this.setState('surprised')
-    const line = this._line('clickReactions', 'Oh-ho! What do you want to know? Ask me anything!')
+    const line = getLang() === 'es'
+      ? 'Hola. ¿Qué quieres saber sobre el cuerpo humano?'
+      : this._line('clickReactions', 'Oh-ho! What do you want to know? Ask me anything!')
     setTimeout(() => {
       this.say(line, { openAsk: true, suggestions: this.brain.suggestions(3) })
     }, 250)
   }
 
   greet() {
-    this.say(this._line('greetings', "Hi there! I'm Dr. Buddy. Click any body part to learn about it, or click me to ask a question!"), { openAsk: false })
+    const fallback = getLang() === 'es'
+      ? 'Hola. Soy Dr. Buddy. Haz clic en una parte del cuerpo para conocerla o pregúntame lo que quieras.'
+      : "Hi there! I'm Dr. Buddy. Click any body part to learn about it, or click me to ask a question!"
+    this.say(this._line('greetings', fallback), { openAsk: false })
   }
 
   ask(q) {
@@ -239,8 +270,10 @@ export class Doctor {
       return
     }
     const u = this._utter = new SpeechSynthesisUtterance(clean)
-    if (this.voice) u.voice = this.voice
-    u.lang = this.voice?.lang || (getLang() === 'hi' ? 'hi-IN' : 'en-US')
+    const lang = getLang()
+    const expectedPrefix = lang === 'es' ? 'es' : (lang === 'hi' ? 'hi' : 'en')
+    if (this.voice?.lang && this.voice.lang.toLowerCase().startsWith(expectedPrefix)) u.voice = this.voice
+    u.lang = lang === 'es' ? 'es-ES' : (lang === 'hi' ? 'hi-IN' : 'en-US')
     u.pitch = 1.25; u.rate = 1.03; u.volume = 1
     u.onboundary = () => { this.mouthTarget = 1 }
     // Ignore events from an utterance that was cancelled to make way for a newer one.
@@ -258,7 +291,14 @@ export class Doctor {
     done?.()
   }
 
-  _line(kind, fb) { const a = this.lines[kind]; return a?.length ? a[Math.floor(Math.random() * a.length)] : fb }
+  _line(kind, fb) {
+    if (getLang() === 'es' && SPANISH_LINES[kind]?.length) {
+      const list = SPANISH_LINES[kind]
+      return list[Math.floor(Math.random() * list.length)]
+    }
+    const a = this.lines[kind]
+    return a?.length ? a[Math.floor(Math.random() * a.length)] : fb
+  }
 
   setState(s) { this.state = s; this.stateT = 0 }
   setIdle(which) {

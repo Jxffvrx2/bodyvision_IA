@@ -69,15 +69,16 @@ export function displayName(objName, mode, withSide = true, layer) {
 }
 
 export function entryName(entry, mode) {
-  if (mode === 'common') return entry.common || entry.medical
-  if (mode === 'medical_hi') return entry.medical_hi || entry.medical
+  if (mode === 'common') return entry.common || entry.medical_es || entry.medical
+  if (mode === 'medical_hi') return entry.medical_hi || entry.medical_es || entry.medical
+  if (contentLang === 'es') return entry.medical_es || entry.medical
   return entry.medical
 }
 
 // ---------------- translations ----------------
 // content/i18n/<lang>/<layer>.json, loaded only when that language is chosen (keeps the English bundle small).
 const translations = import.meta.glob('../../content/i18n/*/*.json', { import: 'default' })
-const SIDE_WORDS = { hi: { left: 'बायाँ', right: 'दायाँ' } }
+const SIDE_WORDS = { es: { left: 'izquierdo', right: 'derecho' }, hi: { left: 'बायाँ', right: 'दायाँ' } }
 const FIELDS = ['common', 'category', 'summary', 'function', 'location', 'facts']
 export let contentLang = 'en'
 const englishCommon = new Map(extraCommon)
@@ -97,6 +98,7 @@ export async function setContentLanguage(lang) {
     const tr = files[e.layer]?.structures?.[e.id]
     for (const f of FIELDS) e[f] = (tr && tr[f]) || e._en[f]
     e.medical_hi = files[e.layer]?.structures?.[e.id]?.medical_hi || e.medical_hi
+    e.medical_es = files[e.layer]?.structures?.[e.id]?.medical_es || e.medical_es
   }
   for (const [layer, sec] of Object.entries(sections)) {
     sec._enOverview ||= sec.overview

@@ -6,6 +6,7 @@ import { sfx, play } from './sfx.js'
 import { TourRunner } from './tours.js'
 import { Intro } from './intro.js'
 import { t, setLang, getLang } from './i18n.js'
+import { BodyVisionApp } from './bodyvision.js'
 
 const $ = (s) => document.querySelector(s)
 const layerLabel = (k) => t('layer.' + k)
@@ -99,7 +100,7 @@ function countUp(el, to) {
 countUp($('#stat-entries'), entries.length)
 logLine(t('landing.logKb', { n: entries.length }), entries.length > 0)
 function setReady() {
-  bootBtn.disabled = tourBtn.disabled = false
+  bootBtn.disabled = tourBtn.disabled = bootDashboard.disabled = false
   bootBtn.textContent = t('landing.start')
 }
 anatomy.addEventListener('layerloaded', (e) => {
@@ -129,6 +130,8 @@ function enterApp(then) {
 }
 bootBtn.addEventListener('click', () => enterApp())
 tourBtn.addEventListener('click', () => enterApp(() => tours.start('blood')))
+const bootDashboard = $('#boot-dashboard')
+if (bootDashboard) bootDashboard.addEventListener('click', () => enterApp(() => bodyVision.open('dashboard')))
 
 ;(async () => {
   for (const k of bootOrder) {
@@ -393,7 +396,7 @@ function applyUIStrings() {
 }
 let langBusy = false
 async function setLanguage(code) {
-  if (langBusy || code === getLang()) return
+  if (langBusy) return
   langBusy = true
   document.body.classList.add('lang-switching')
   try {
@@ -424,7 +427,7 @@ refreshLayerStates()
 {
   let saved = null
   try { saved = localStorage.getItem('lang') } catch {}
-  if (saved && saved !== 'en' && availableLanguages.includes(saved)) setLanguage(saved)
+  setLanguage(['es', 'en'].includes(saved) ? saved : 'es')
 }
 
 function loop() {
@@ -434,3 +437,12 @@ function loop() {
   requestAnimationFrame(loop)
 }
 loop()
+
+const bodyVision = new BodyVisionApp(() => enterApp())
+window.bodyVision = bodyVision
+const openDashboard = () => {
+  if (booted) bodyVision.open('dashboard')
+  else enterApp(() => bodyVision.open('dashboard'))
+}
+$('#open-dashboard-top')?.addEventListener('click', openDashboard)
+$('#open-dashboard-dock')?.addEventListener('click', openDashboard)
